@@ -20,6 +20,39 @@ def get_stock_data(symbol: str):
         except Exception:
             info = {}
 
+        if not info or not info.get("longName"):
+            # Try fallback to Alpha Vantage
+            alt_url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={ALPHA_KEY}"
+            try:
+                res = requests.get(alt_url)
+                res.raise_for_status()
+                alt_info = res.json()
+
+                if "Symbol" not in alt_info:
+                    raise HTTPException(status_code=404, detail="No data from Alpha Vantage either")
+
+                data = {
+                    "info": {
+                        "longName": alt_info.get("Name", symbol.upper()),
+                        "sector": alt_info.get("Sector", "Unknown"),
+                        "marketCap": int(float(alt_info.get("MarketCapitalization", 0))),
+                        "trailingPE": alt_info.get("PERatio", "N/A"),
+                        "trailingEps": alt_info.get("EPS", "N/A")
+                    },
+                    "history": [],
+                    "financials": {
+                        "balance_sheet": {},
+                        "income_stmt": {},
+                        "cashflow": {}
+                    }
+                }
+
+                stocks.update_one({"symbol": symbol}, {"$set": data}, upsert=True)
+                return data
+
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Yahoo Finance and Alpha Vantage both failed: {str(e)}")
+
         if not info.get("longName"):
             info["longName"] = symbol.upper()
         if not info.get("sector"):
