@@ -6,12 +6,7 @@ from analyzer import analyzer
 from predictor import predictor
 
 app = FastAPI()
-app.include_router(auth)
-app.include_router(financials)
-app.include_router(analyzer)
-app.include_router(predictor)
 
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,3 +15,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(auth)
+app.include_router(financials)
+app.include_router(analyzer)
+app.include_router(predictor)

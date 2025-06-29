@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 import yfinance as yf
 import requests
 from db import stocks
@@ -12,23 +12,38 @@ financials = APIRouter()
 
 @financials.get("/stock/{symbol}")
 def get_stock_data(symbol: str):
-    stock = yf.Ticker(symbol)
-    info = stock.info
-    history = stock.history(period="5y").reset_index().to_dict(orient="records")
-    data = {
-        "info": info,
-        "history": history,
-        "financials": {
-            "balance_sheet": stock.balance_sheet.to_dict(),
-            "income_stmt": stock.financials.to_dict(),
-            "cashflow": stock.cashflow.to_dict()
+    try:
+        stock = yf.Ticker(symbol)
+        info = stock.info or {}
+        history = stock.history(period="5y")
+        if history.empty:
+            raise HTTPException(status_code=404, detail="No historical data found")
+
+        history_data = history.reset_index().to_dict(orient="records")
+        data = {
+            "info": info,
+            "history": history_data,
+            "financials": {
+                "balance_sheet": stock.balance_sheet.to_dict() if not stock.balance_sheet.empty else {},
+                "income_stmt": stock.financials.to_dict() if not stock.financials.empty else {},
+                "cashflow": stock.cashflow.to_dict() if not stock.cashflow.empty else {}
+            }
         }
-    }
-    stocks.update_one({"symbol": symbol}, {"$set": data}, upsert=True)
-    return data
+        stocks.update_one({"symbol": symbol}, {"$set": data}, upsert=True)
+        return data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @financials.get("/alpha/{symbol}")
 def get_alpha_data(symbol: str):
     url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={ALPHA_KEY}"
-    res = requests.get(url)
-    return res.json()
+    try:
+        res = requests.get(url)
+        res.raise_for_status()
+        data = res.json()
+        if "Symbol" not in data:
+            raise HTTPException(status_code=404, detail="No Alpha Vantage data found")
+        return data
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e))
