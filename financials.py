@@ -14,7 +14,22 @@ financials = APIRouter()
 def get_stock_data(symbol: str):
     try:
         stock = yf.Ticker(symbol)
-        info = stock.get_info() or {}
+
+        try:
+            info = stock.get_info()
+        except Exception:
+            info = {}
+
+        if not info.get("longName"):
+            info["longName"] = symbol.upper()
+        if not info.get("sector"):
+            info["sector"] = "Unknown"
+        if not info.get("marketCap"):
+            info["marketCap"] = 0
+        if not info.get("trailingPE"):
+            info["trailingPE"] = "N/A"
+        if not info.get("trailingEps"):
+            info["trailingEps"] = "N/A"
 
         history = stock.history(period="5y")
         if history.empty:
@@ -24,17 +39,17 @@ def get_stock_data(symbol: str):
 
         data = {
             "info": {
-                "longName": info.get("longName", ""),
-                "sector": info.get("sector", ""),
-                "marketCap": info.get("marketCap", 0),
-                "trailingPE": info.get("trailingPE", ""),
-                "trailingEps": info.get("trailingEps", "")
+                "longName": info["longName"],
+                "sector": info["sector"],
+                "marketCap": info["marketCap"],
+                "trailingPE": info["trailingPE"],
+                "trailingEps": info["trailingEps"]
             },
             "history": history_data,
             "financials": {
-                "balance_sheet": stock.balance_sheet.to_dict() if not stock.balance_sheet.empty else {},
-                "income_stmt": stock.financials.to_dict() if not stock.financials.empty else {},
-                "cashflow": stock.cashflow.to_dict() if not stock.cashflow.empty else {}
+                "balance_sheet": stock.balance_sheet.to_dict() if hasattr(stock, "balance_sheet") and not stock.balance_sheet.empty else {},
+                "income_stmt": stock.financials.to_dict() if hasattr(stock, "financials") and not stock.financials.empty else {},
+                "cashflow": stock.cashflow.to_dict() if hasattr(stock, "cashflow") and not stock.cashflow.empty else {}
             }
         }
 
