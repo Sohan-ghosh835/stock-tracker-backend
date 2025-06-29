@@ -11,9 +11,12 @@ app.include_router(financials)
 app.include_router(analyzer)
 app.include_router(predictor)
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://sohan-ghosh835.github.io"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
