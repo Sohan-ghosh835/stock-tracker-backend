@@ -15,11 +15,22 @@ def get_stock_data(symbol: str):
     try:
         stock = yf.Ticker(symbol)
         info = stock.info or {}
+        if "longName" not in info:
+            info["longName"] = symbol
+        if "sector" not in info:
+            info["sector"] = "N/A"
+        if "marketCap" not in info:
+            info["marketCap"] = 0
+        if "trailingPE" not in info:
+            info["trailingPE"] = "N/A"
+        if "trailingEps" not in info:
+            info["trailingEps"] = "N/A"
+
         history = stock.history(period="5y")
         if history.empty:
             raise HTTPException(status_code=404, detail="No historical data found")
-
         history_data = history.reset_index().to_dict(orient="records")
+
         data = {
             "info": info,
             "history": history_data,
@@ -31,7 +42,6 @@ def get_stock_data(symbol: str):
         }
         stocks.update_one({"symbol": symbol}, {"$set": data}, upsert=True)
         return data
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
