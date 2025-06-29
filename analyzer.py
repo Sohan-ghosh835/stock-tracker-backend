@@ -3,8 +3,9 @@ from db import stocks
 
 analyzer = APIRouter()
 
-@analyzer.get("/compare/{symbol1:path}/{symbol2:path}")
+@analyzer.get("/compare")
 def compare_stocks(symbol1: str, symbol2: str):
+
     s1 = stocks.find_one({"symbol": symbol1})
     s2 = stocks.find_one({"symbol": symbol2})
     if not s1 or not s2:
