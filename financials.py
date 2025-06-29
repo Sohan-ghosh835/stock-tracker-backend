@@ -14,7 +14,7 @@ financials = APIRouter()
 def get_stock_data(symbol: str):
     try:
         stock = yf.Ticker(symbol)
-        info = stock.info or {}
+        info = stock.get_info() or {}
 
         history = stock.history(period="5y")
         if history.empty:
