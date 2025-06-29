@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pymongo
+yfinance
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+numpy
+python-dotenv
+requests
