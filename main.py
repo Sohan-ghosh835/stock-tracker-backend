@@ -4,6 +4,7 @@ from auth import auth
 from financials import financials
 from analyzer import analyzer
 from predictor import predictor
+from ai_guide import ai_guide
 
 app = FastAPI()
 
@@ -21,3 +22,4 @@ app.include_router(auth)
 app.include_router(financials)
 app.include_router(analyzer)
 app.include_router(predictor)
+app.include_router(ai_guide)
