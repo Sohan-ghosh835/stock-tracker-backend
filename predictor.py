@@ -4,7 +4,7 @@ import numpy as np
 
 predictor = APIRouter()
 
-@predictor.get("/predict")
+@predictor.get("/predict/{symbol:path}")
 def predict_price(symbol: str):
     data = stocks.find_one({"symbol": symbol})
     if not data:

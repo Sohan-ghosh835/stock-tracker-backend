@@ -10,9 +10,8 @@ ALPHA_KEY = os.getenv("ALPHA_VANTAGE_KEY")
 
 financials = APIRouter()
 
-@financials.get("/stock")
+@financials.get("/stock/{symbol:path}")
 def get_stock_data(symbol: str):
-
 
     try:
         stock = yf.Ticker(symbol)
