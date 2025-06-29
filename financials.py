@@ -15,24 +15,21 @@ def get_stock_data(symbol: str):
     try:
         stock = yf.Ticker(symbol)
         info = stock.info or {}
-        if "longName" not in info:
-            info["longName"] = symbol
-        if "sector" not in info:
-            info["sector"] = "N/A"
-        if "marketCap" not in info:
-            info["marketCap"] = 0
-        if "trailingPE" not in info:
-            info["trailingPE"] = "N/A"
-        if "trailingEps" not in info:
-            info["trailingEps"] = "N/A"
 
         history = stock.history(period="5y")
         if history.empty:
             raise HTTPException(status_code=404, detail="No historical data found")
+
         history_data = history.reset_index().to_dict(orient="records")
 
         data = {
-            "info": info,
+            "info": {
+                "longName": info.get("longName", ""),
+                "sector": info.get("sector", ""),
+                "marketCap": info.get("marketCap", 0),
+                "trailingPE": info.get("trailingPE", ""),
+                "trailingEps": info.get("trailingEps", "")
+            },
             "history": history_data,
             "financials": {
                 "balance_sheet": stock.balance_sheet.to_dict() if not stock.balance_sheet.empty else {},
@@ -40,10 +37,12 @@ def get_stock_data(symbol: str):
                 "cashflow": stock.cashflow.to_dict() if not stock.cashflow.empty else {}
             }
         }
+
         stocks.update_one({"symbol": symbol}, {"$set": data}, upsert=True)
         return data
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}")
 
 @financials.get("/alpha/{symbol}")
 def get_alpha_data(symbol: str):
